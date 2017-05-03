@@ -1,0 +1,84 @@
+#!/bin/bash
+#===============================================================================
+# Verify CppUnit setup
+#
+# Version: 1.1.0 
+# Date: 03 May 2017
+# Author: Dave Nicolette
+#===============================================================================
+
+echo
+echo '============================================================='
+echo 'Verifying CppUnit installation...'
+
+declare -i errors=0
+
+declare -a pkg
+pkg[${#pkg[@]}]='git'
+pkg[${#pkg[@]}]='build-essential'
+pkg[${#pkg[@]}]="linux-headers-$(uname -r)"
+pkg[${#pkg[@]}]='dkms'
+pkg[${#pkg[@]}]='python-software-properties'
+pkg[${#pkg[@]}]='libcppunit-dev'
+pkg[${#pkg[@]}]='libcppunit-doc'
+
+for name in "${pkg[@]}"
+do
+  if [[ -n "$(aptitude search ${name})" ]]; then 
+      echo "package ${name} is installed"
+  else
+      echo "package ${name} was expected but is not installed - ERROR"
+      errors="${errors}+1"
+  fi 
+done
+
+CONFIG_OK=
+if [ -d "../cppunit_sample" ]; then
+    pushd ../cppunit_sample
+    ./init
+    CONFIG_OK=$(grep "configure: exit 0" config.log)
+    if [ "$CONFIG_OK" ]; then
+        if [ "$(diff test-suite.log test-suite-expected.log)" ]; then
+            errors="${errors}+1"
+            echo 'Sample test suite did not produce expected results'
+            echo 'Check test-suite.log and stdout/stderr for errors'
+            popd
+            exit 1
+        else
+            if [ "$(diff MoneyApp.log MoneyApp-expected.log)" ]; then
+                errors="${errors}+1"
+                echo 'Sample application did not build/test as expected'
+                echo 'Check MoneyApp.log and stdout/stderr for errors'
+                popd
+                exit 1
+            fi
+        fi
+    else
+        errors="${errors}+1"
+        echo 'configure exited with non-zero response code'
+        echo 'Check config.log for errors during configuration'
+        popd
+        exit 1
+    fi
+    popd
+else
+    errors="${errors}+1"
+    echo 'Directory ../cppunit_sample does not exist'
+    echo 'Check stdout, stderr, and logs for errors during provisioning'
+    popd
+    exit 1
+fi
+
+echo 'Installation verified'
+echo 'It appears as if CppUnit is installed and usable'
+exit 0
+
+
+
+
+
+
+
+
+test "${errors}" -eq 0 && echo "...configuration is as expected." || echo "...${errors} expected package(s) or application(s) not found! Configuration may not function as desired." 
+

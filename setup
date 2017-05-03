@@ -1,0 +1,49 @@
+#!/bin/bash
+#=================================================================================
+# Configure an instance of Ubuntu 16.04 Desktop for C/C++ and CppUnit.
+#
+# Version: 1.0.0
+# Date: 03 May 2017
+# Author: Dave Nicolette
+#=================================================================================
+
+clear
+echo ' '
+echo 'Provisioning this instance for C/C++ and CppUnit development'
+echo 'setup script: version 1.0.0 03 May 2017'
+echo 'Assumes Ubuntu 16.04 Desktop 64-bit'
+echo ' '
+echo 'Applying system software updates...'
+
+sudo apt update
+sudo apt -y dist-upgrade
+
+# This could be true if the setup script was obtained from a source other than github
+
+if [ ! -f /usr/bin/git ]; then
+    echo ' '
+    echo 'git is required and is not installed'
+    echo 'intalling git...'
+    sudo apt install -y git
+fi
+
+export INSTALL_DIR="$HOME/provision-ubuntu-cppunit"
+export COMMON_DIR="provision-ubuntu-16.04-common"
+
+# On a re-run of the setup script, this repo will already have been cloned
+
+if [ ! -f "$COMMON_DIR" ]; then
+    git clone "git://github.com/neopragma/$COMMON_DIR"
+fi
+
+"./$COMMON_DIR/install_development_basics"
+"./$COMMON_DIR/install_cppunit"
+"./$COMMON_DIR/install_sublime_text_3"
+
+echo ' '
+echo 'Copying sample files to ../cppunit_sample'
+
+cp -R cppunit_sample ../.
+
+./verify
+
